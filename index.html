@@ -85,10 +85,34 @@
         </div>
     </footer>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAP8_4DX7xGufNacga_CU4hA015HO6BYrg",
+            authDomain: "fir-test-a8b25.firebaseapp.com",
+            projectId: "fir-test-a8b25",
+            storageBucket: "fir-test-a8b25.firebasestorage.app",
+            messagingSenderId: "349428334035",
+            appId: "1:349428334035:web:02a6118ec26ab933318326",
+            measurementId: "G-3SJ24W8L6B"
+        };
+
+        // Initialize Firebase Components
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // Make Firebase logEvent accessible to our normal tracking functions below
+        window.firebaseAnalyticsInstance = analytics;
+        window.logFirebaseEvent = logEvent;
+    </script>
+
     <script>
         // Central function for Item-level events (View and Add to Cart)
         function trackEvent(eventName, id, name, price) {
-            window.dataLayer.push({ ecommerce: null }); // Clear previous
+            // 1. Existing GTM DataLayer Push
+            window.dataLayer.push({ ecommerce: null }); 
             window.dataLayer.push({
                 event: eventName,
                 ecommerce: {
@@ -102,49 +126,96 @@
                     }]
                 }
             });
-            console.log("Triggered: " + eventName);
+            console.log("GTM Triggered: " + eventName);
+
+            // 2. New Firebase Event Collection Strategy
+            if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
+                window.logFirebaseEvent(window.firebaseAnalyticsInstance, eventName, {
+                    currency: "USD",
+                    value: price,
+                    items: [{
+                        item_id: id,
+                        item_name: name,
+                        price: price,
+                        quantity: 1
+                    }]
+                });
+                console.log("Firebase Triggered: " + eventName);
+            }
         }
 
         // Logic for view_cart
         function trackViewCart() {
+            // GTM Track
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: "view_cart",
                 ecommerce: {
                     currency: "USD",
-                    value: 1200, // Static demo value
+                    value: 1200, 
                     items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
                 }
             });
+
+            // Firebase Track
+            if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
+                window.logFirebaseEvent(window.firebaseAnalyticsInstance, "view_cart", {
+                    currency: "USD",
+                    value: 1200,
+                    items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
+                });
+            }
             alert("Viewing Cart! Check Web & Server Previews.");
         }
 
         // Logic for purchase
         function trackPurchase() {
+            const generatedTxId = "T_" + Math.floor(Math.random() * 10000);
+
+            // GTM Track
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: "purchase",
                 ecommerce: {
-                    transaction_id: "T_" + Math.floor(Math.random() * 10000),
+                    transaction_id: generatedTxId,
                     value: 1200,
                     currency: "USD",
                     items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
                 }
             });
+
+            // Firebase Track
+            if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
+                window.logFirebaseEvent(window.firebaseAnalyticsInstance, "purchase", {
+                    transaction_id: generatedTxId,
+                    value: 1200,
+                    currency: "USD",
+                    items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
+                });
+            }
             alert("Purchase Complete!");
         }
 
-        // Newsletter Logic (Perfect for testing PII Hashing)
+        // Newsletter Logic
         function trackNewsletter() {
             const emailValue = document.getElementById('newsEmail').value;
             if(!emailValue) { alert("Please enter an email"); return; }
             
+            // GTM Track
             window.dataLayer.push({
                 event: "sign_up",
                 user_data: {
-                    email: emailValue // sGTM can hash this before sending to vendors!
+                    email: emailValue 
                 }
             });
+            
+            // Firebase Track
+            if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
+                window.logFirebaseEvent(window.firebaseAnalyticsInstance, "sign_up", {
+                    method: "newsletter",
+                    user_email_debug: emailValue // Custom parameter mapping exercise
+                });
+            }
             alert("Newsletter event sent with email: " + emailValue);
         }
     </script>
