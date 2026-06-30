@@ -99,54 +99,37 @@
             measurementId: "G-3SJ24W8L6B"
         };
 
-        // Initialize Firebase Components
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
 
-        // Make Firebase logEvent accessible to our normal tracking functions below
         window.firebaseAnalyticsInstance = analytics;
         window.logFirebaseEvent = logEvent;
     </script>
 
     <script>
-        // Central function for Item-level events (View and Add to Cart)
         function trackEvent(eventName, id, name, price) {
-            // 1. Existing GTM DataLayer Push
             window.dataLayer.push({ ecommerce: null }); 
             window.dataLayer.push({
                 event: eventName,
                 ecommerce: {
                     currency: "USD",
                     value: price,
-                    items: [{
-                        item_id: id,
-                        item_name: name,
-                        price: price,
-                        quantity: 1
-                    }]
+                    items: [{ item_id: id, item_name: name, price: price, quantity: 1 }]
                 }
             });
-            console.log("GTM Triggered: " + eventName);
 
-            // 2. New Firebase Event Collection Strategy
             if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
                 window.logFirebaseEvent(window.firebaseAnalyticsInstance, eventName, {
                     currency: "USD",
                     value: price,
-                    items: [{
-                        item_id: id,
-                        item_name: name,
-                        price: price,
-                        quantity: 1
-                    }]
+                    debug_mode: true, // 🌟 FORCES INSTANT DELIVERY TO DEBUGVIEW
+                    items: [{ item_id: id, item_name: name, price: price, quantity: 1 }]
                 });
-                console.log("Firebase Triggered: " + eventName);
+                console.log("Firebase Event Sent: " + eventName);
             }
         }
 
-        // Logic for view_cart
         function trackViewCart() {
-            // GTM Track
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: "view_cart",
@@ -157,22 +140,20 @@
                 }
             });
 
-            // Firebase Track
             if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
                 window.logFirebaseEvent(window.firebaseAnalyticsInstance, "view_cart", {
                     currency: "USD",
                     value: 1200,
+                    debug_mode: true, // 🌟 FORCES INSTANT DELIVERY TO DEBUGVIEW
                     items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
                 });
             }
             alert("Viewing Cart! Check Web & Server Previews.");
         }
 
-        // Logic for purchase
         function trackPurchase() {
             const generatedTxId = "T_" + Math.floor(Math.random() * 10000);
 
-            // GTM Track
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: "purchase",
@@ -184,39 +165,35 @@
                 }
             });
 
-            // Firebase Track
             if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
                 window.logFirebaseEvent(window.firebaseAnalyticsInstance, "purchase", {
                     transaction_id: generatedTxId,
                     value: 1200,
                     currency: "USD",
+                    debug_mode: true, // 🌟 FORCES INSTANT DELIVERY TO DEBUGVIEW
                     items: [{ item_id: "P1", item_name: "Pro Laptop", price: 1200, quantity: 1 }]
                 });
             }
             alert("Purchase Complete!");
         }
 
-        // Newsletter Logic
         function trackNewsletter() {
             const emailValue = document.getElementById('newsEmail').value;
             if(!emailValue) { alert("Please enter an email"); return; }
             
-            // GTM Track
             window.dataLayer.push({
                 event: "sign_up",
-                user_data: {
-                    email: emailValue 
-                }
+                user_data: { email: emailValue }
             });
             
-            // Firebase Track
             if (window.logFirebaseEvent && window.firebaseAnalyticsInstance) {
                 window.logFirebaseEvent(window.firebaseAnalyticsInstance, "sign_up", {
                     method: "newsletter",
-                    user_email_debug: emailValue // Custom parameter mapping exercise
+                    debug_mode: true, // 🌟 FORCES INSTANT DELIVERY TO DEBUGVIEW
+                    user_email_debug: emailValue 
                 });
             }
-            alert("Newsletter event sent with email: " + emailValue);
+            alert("Newsletter event sent!");
         }
     </script>
 </body>
